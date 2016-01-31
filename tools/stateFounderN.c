@@ -20,8 +20,8 @@
 #define DATA_MAX 90000
 float g_pmin,g_pmax;
 //================================
-float fSub = 10.;
-int thresholdA = 500;
+float fSub = 1.;
+int thresholdA = 1;
 //================================
 int nSub;
 int g_nfreq[DATA_MAX], g_time[DATA_MAX];
@@ -97,7 +97,10 @@ int readNilmDataFile(char nilmFile[],int mode)
       } 
       return(n);
 }
-
+int lin(float x)
+{
+    
+}
 //===========================================
 //===========================================
 main()
@@ -152,25 +155,34 @@ main()
 
 
    //====== States ========
-   int k=0,m=0;
+   int k=0,m=0,check;
    float sum = 0.;
    for(i=0;i<=nSub;i++)
    {
      float ftemp = i*subInt+subInt/2;
-     printf("%3d %5.1f %d\n",i,ftemp,g_nfreq[i]);
+     //printf("%3d %5.1f %d\n",i,ftemp,g_nfreq[i]);
      if(g_nfreq[i] > thresholdA)
      {
          k++;
          g_state[k] = ftemp;
          float diff = ftemp - g_state[k-1];
-         //printf("%3d %3d %3d %5.1f %5.1f\n",k,i,g_nfreq[i],ftemp,diff);
+         printf("%3d %3d %3d %5.1f %5.1f\n",k,i,g_nfreq[i],ftemp,diff);
          if(diff > subInt+1)
          {
-           printf("***%3d %3d %5.1f %5.1f\n",k,i,ftemp,diff);
+           //printf("***%3d %3d %5.1f %5.1f\n",k,i,ftemp,diff);
            sum = sum +diff;
-         }
-         
+         } 
      }
+   }
+   printf("Number of state levels = %d\n",k);
+   for(i=1;i<=k;i++)
+   {
+       check = lin(g_state[i]);
+       if(check == 0)
+       {
+          m++;
+          level[m] = g_state[i];
+       }
    }
    int ndev = (int)(log(k*1.0)/log(2.));	
 

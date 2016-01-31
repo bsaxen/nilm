@@ -533,6 +533,10 @@ void openCommand()
           n = lib_generatedData("autoGraph",0,36000);
           list_all_nilm_files();
           sprintf(g_errMsg,"NILM Data File generated entries=%d",n); 
+          g_nData = lib_readNilmFile(g_mode,g_data_file);
+          r_xmin = g_xmin;r_xmax = g_xmax;
+          r_ymin = g_ymin;r_ymax = g_ymax;
+          prep_area(g_nData,g_xdata,g_ydata, r_xmin, r_xmax, r_ymin, r_ymax);     
         }
       else if(strlen(sstr) > 0) 
         {
