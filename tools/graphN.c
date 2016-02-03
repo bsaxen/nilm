@@ -530,7 +530,7 @@ void openCommand()
         }
       if(strstr(sstr,"gen"))
         {
-          n = lib_generatedData("autoGraph",0,36000);
+          n = lib_generatedData("autoGraph",0,86400);
           list_all_nilm_files();
           sprintf(g_errMsg,"NILM Data File generated entries=%d",n); 
           g_nData = lib_readNilmFile(g_mode,g_data_file);

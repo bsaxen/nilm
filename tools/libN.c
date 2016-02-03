@@ -4,7 +4,7 @@
 // gcc -o libN libN.c -lncurses -lm
 // Version: 2016-01-30
 //======================================
-#define DATA_MAX 86400
+#define DATA_MAX 86401
 //#define X_MAX 500
 //#define Y_MAX 500
 
@@ -214,8 +214,8 @@ for(i=left;i<right;i++)
   //v = sin(g_pi*i/200)*t*t;
   v = 
       lib_squareWave(0.0 ,50.0,100.0,50.0, t)+
-      lib_squareWave(10.0,80.0, 1270.0,50.0, t)+
-      lib_squareWave(20.0,160.0, 170.0,50.0, t)+
+      lib_squareWave(10.0,80.0, 500.0,50.0, t)+
+      lib_squareWave(20.0,160.0, 133.0,50.0, t)+
       lib_squareWave(30.0,220.0, 1570.0,1250.0, t)+
       lib_squareWave(40.0,800.0,200.0,70.0, t);
       
