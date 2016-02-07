@@ -25,7 +25,7 @@ int n_state = 0;
 int n_data = 0;
 
 //================================
-float fSub = 50.;
+float fSub = 10.;
 int thresholdA = 50;
 int g_filter = 0;
 //float fSub = 1.;
@@ -61,13 +61,12 @@ void stateFinderFunc()
 {
    int i,j;
    float left,right;
-   n_data = lib_readNilmFile(1,"../../nytomta/data-302-2016-01-13.nbc");
-   //n_data = lib_readNilmFile(1,"autoGraph.nilm");
+   //n_data = lib_readNilmFile(1,"../../nytomta/data-302-2016-01-13.nbc");
+   n_data = lib_readNilmFile(1,"autoGraph.nilm");
    g_pmax = g_ymax;
    g_pmin = g_ymin; 
-
    nSub = (int)((g_pmax - g_pmin)/fSub);
-   //printf("min=%f max=%f\n",g_pmin,g_pmax);
+   printf("min=%f max=%f\n",g_pmin,g_pmax);
 
 
    float subInt = fSub;//(g_pmax- g_pmin)/nSub;
@@ -84,6 +83,7 @@ void stateFinderFunc()
    }
    int k=0,m=0,check;
    float sum = 0.;
+   g_state[0] = g_ymin;
    for(i=0;i<=nSub;i++)
    {
      float ftemp = i*subInt+subInt/2;
@@ -91,10 +91,10 @@ void stateFinderFunc()
      {
          k++;
          g_state[k] = ftemp;
-         float diff = ftemp - g_state[k-1];
-         //printf("state=%3d sub=%3d freq=%3d value=%5.1f diff=%5.1f\n",k,i,g_nfreq[i],ftemp,diff);
+         printf("state=%3d sub=%3d freq=%3d value=%5.1f\n",k,i,g_nfreq[i],ftemp);
      }
    }
+   printf("Bias = %f\n",g_ymin);
    n_state = k;
    printf("Data = %d fSub=%f threshold=%d filter=%d => states=%d\n",n_data,fSub,thresholdA,g_filter,n_state);
 }
@@ -103,7 +103,7 @@ int getState(float x)
 //===========================================
 {
     int i,j=0,res;
-    for(i=1;i<=n_state;i++)
+    for(i=0;i<=n_state;i++)
     {
         //printf("%d %f %f\n",i,x,g_state[i]);
         if(abs(g_state[i] - x) <= fSub )
@@ -145,7 +145,7 @@ void stateFreqFinderFunc()
 {
     int i,j;
     float ftemp;
-    for(i=1;i<=n_state;i++)
+    for(i=0;i<=n_state;i++)
     {
         for(j=1;j<=n_state;j++)M[i][j] = 0;
     }
@@ -155,25 +155,25 @@ void stateFreqFinderFunc()
     }
     
     printf("   ");
-    for(j=1;j<=n_state;j++)printf("%3d ",j);
+    for(j=0;j<=n_state;j++)printf("%3d ",j);
     printf("\n");
-    for(i=1;i<=n_state;i++)
+    for(i=0;i<=n_state;i++)
     {
         printf("%2d ",i);
-        for(j=1;j<=n_state;j++)printf("%3d ",M[i][j]);
+        for(j=0;j<=n_state;j++)printf("%3d ",M[i][j]);
         printf("\n");
     }
     
     printf("\n");
     printf("   ");
-    for(j=1;j<=n_state;j++)printf("%3d ",j);
+    for(j=0;j<=n_state;j++)printf("%3d ",j);
     printf("\n");
-    for(i=1;i<=n_state;i++)
+    for(i=0;i<=n_state;i++)
     {
         printf("%2d ",i);
-        for(j=1;j<=n_state;j++)
+        for(j=0;j<=n_state;j++)
         {
-            ftemp = (g_state[i]-g_state[j])/10;
+            ftemp = (g_state[i]-g_state[j]);
             ftemp = abs(ftemp);
             if(M[i][j] > g_filter)printf("%3.0f ",ftemp);
             else 

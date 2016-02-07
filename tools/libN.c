@@ -215,8 +215,8 @@ for(i=left;i<right;i++)
   v = 
       lib_squareWave(0.0 ,50.0,100.0,50.0, t)+
       lib_squareWave(10.0,80.0, 500.0,50.0, t)+
-      lib_squareWave(20.0,160.0, 133.0,50.0, t)+
-      lib_squareWave(30.0,220.0, 1570.0,1250.0, t)+
+      //lib_squareWave(20.0,160.0, 133.0,50.0, t)+
+      //lib_squareWave(30.0,220.0, 1570.0,1250.0, t)+
       lib_squareWave(40.0,800.0,200.0,70.0, t);
       
   g_xdata[n] = t;
