@@ -23,9 +23,10 @@ float g_pmin,g_pmax;
 int n_trans = 0;
 int n_state = 0;
 int n_data = 0;
+int n_dev = 0;
 
 //================================
-float fSub = 10.;
+float fSub = 1.;
 int thresholdA = 50;
 int g_filter = 0;
 //float fSub = 1.;
@@ -36,22 +37,35 @@ int g_nfreq[DATA_MAX], g_time[DATA_MAX];
 //float g_data[DATA_MAX];
 float g_state[DATA_MAX];
 //float g_state2[DATA_MAX];
+float g_device[DATA_MAX];
+int g_device_duration[DATA_MAX];
 
 int state_transition_from[DATA_MAX];
 int state_transition_to[DATA_MAX];
+int state_transition_time[DATA_MAX];
+float state_transition_delta[DATA_MAX];
 int M[2000][2000];
 //===========================================
 void init()
 //===========================================
 {
 	int i;
+    
+    n_dev = 0;
+    n_trans = 0;
+    n_state = 0;
+
 	for(i=0;i<DATA_MAX;i++) 
     {
         g_nfreq[i] = 0;
         g_time[i] = 0;
         g_state[i] = 0;
+        g_device[i] = 0.0;
+        g_device_duration[i] = 0;
         state_transition_from[i] = 0;
         state_transition_to[i] = 0;
+        state_transition_time[i] = 0;
+        state_transition_delta[i] = 0.0;
     }
 }
 
@@ -90,8 +104,8 @@ void stateFinderFunc()
      if(g_nfreq[i] > thresholdA)
      {
          k++;
-         g_state[k] = ftemp;
-         printf("state=%3d sub=%3d freq=%3d value=%5.1f\n",k,i,g_nfreq[i],ftemp);
+         g_state[k] = ftemp + (int)(fSub/2);
+         //printf("state=%3d sub=%3d freq=%3d value=%5.1f\n",k,i,g_nfreq[i],ftemp);
      }
    }
    printf("Bias = %f\n",g_ymin);
@@ -123,8 +137,10 @@ int getState(float x)
 void stateSeqFinderFunc()
 //===========================================
 {
-    int i,k,st=0,prev_st=0;
+    int i,k=0,st=0,prev_st=0;
+    float delta,sum=0;
     
+    st = getState(g_ymin); //bias
     for(i=1;i<=n_data;i++)
     {
         prev_st = st;
@@ -132,22 +148,97 @@ void stateSeqFinderFunc()
         if(st != prev_st)
         {
             k++;
+            delta = g_state[st] - g_state[prev_st];
+            sum = sum + delta;
             state_transition_from[k] = prev_st;
-            state_transition_to[k] = st;
+            state_transition_to[k]   = st;
+            state_transition_time[k] = i;
+            state_transition_delta[k] = delta;
         }
     }
-    //printf("State transitions = %d\n",k);
+    prev_st = st;
+    st = getState(g_ymin); //bias
+    if(st != prev_st)
+    {
+            k++;
+            delta = g_state[st] - g_state[prev_st];
+            sum = sum + delta;
+            state_transition_from[k]  = prev_st;
+            state_transition_to[k]    = st;
+            state_transition_time[k]  = i;
+            state_transition_delta[k] = delta;
+    }
+    
+    printf("%s State transitions = %d sum=%f\n",KBLU,k,sum);
     n_trans = k;
+}
+//===========================================
+int addDevice(float x)
+//===========================================
+{
+    int i;
+    for(i=1;i<=n_dev;i++)
+    {
+        if(g_device[i] == x) return(n_dev);
+    }
+    n_dev++;
+    g_device[n_dev] = x;
+    //printf("%s Add device %d %f\n",KYEL,n_dev,x);
+    return(n_dev);
+}
+//===========================================
+void listDevices()
+//===========================================
+{
+    int i;
+    for(i=1;i<=n_dev;i++)
+    {
+        printf("%s List device %d %5.0f duration=%d\n",KRED,i,g_device[i],g_device_duration[i]);
+    }
+}
+//===========================================
+void getDeviceEnergy()
+//===========================================
+{
+    int i,j,itemp,t1,t2,n;
+    float delta; 
+    
+    for(i=1;i<=n_dev;i++)
+    {
+        //printf("Check %d %f\n",i,g_device[i]);
+        n = 0;
+        for(j=1;j<=n_trans;j++)
+        {
+           delta = state_transition_delta[j];
+        
+           if(g_device[i] == delta)
+           {
+              //printf("left %d %f\n",j,g_device[i]);
+              t1 = state_transition_time[j];
+           }
+           if(g_device[i] == -delta)
+           {
+              t2 = state_transition_time[j];
+              itemp = t2 - t1;
+              //printf("**** %d %f  delta = %d\n",j,g_device[i],itemp);
+              g_device_duration[i] += itemp;
+              n++;
+           }
+            
+        }
+        g_device_duration[i] = g_device_duration[i]/n;
+        //printf("%sEnergy device %d %5.0f duration = %d\n",KRED,i,g_device[i],g_device_duration[i]);
+    }
 }
 //===========================================
 void stateFreqFinderFunc()
 //===========================================
 {
-    int i,j;
+    int i,j,t1=0,t2=0,itemp;
     float ftemp;
     for(i=0;i<=n_state;i++)
     {
-        for(j=1;j<=n_state;j++)M[i][j] = 0;
+        for(j=0;j<=n_state;j++)M[i][j] = 0;
     }
     for(i=1;i<=n_trans;i++)
     {
@@ -161,26 +252,42 @@ void stateFreqFinderFunc()
     {
         printf("%2d ",i);
         for(j=0;j<=n_state;j++)printf("%3d ",M[i][j]);
-        printf("\n");
+        printf("%5.0f\n",g_state[i]);
     }
     
     printf("\n");
     printf("   ");
-    for(j=0;j<=n_state;j++)printf("%3d ",j);
+    for(j=0;j<=n_state;j++)printf("%s%3d ",KNRM,j);
     printf("\n");
     for(i=0;i<=n_state;i++)
     {
         printf("%2d ",i);
         for(j=0;j<=n_state;j++)
         {
-            ftemp = (g_state[i]-g_state[j]);
-            ftemp = abs(ftemp);
-            if(M[i][j] > g_filter)printf("%3.0f ",ftemp);
+            ftemp = (g_state[j]-g_state[i]);
+            //ftemp = abs(ftemp);
+            if(M[i][j] > g_filter)
+            {
+                if(ftemp < 0.0)
+                {
+                    ftemp = abs(ftemp);
+                    printf("%s%3.0f ",KYEL,ftemp);
+                }
+                else
+                {
+                    printf("%s%3.0f ",KGRN,ftemp);
+                    n_dev = addDevice(ftemp);
+                }
+            }
             else 
                 printf("    ");
         }
-        printf("\n");
+        printf("%s%5.0f\n",KNRM,g_state[i]);
     }
+    printf("benny %d\n",n_dev);
+    //getDeviceEnergy();
+    listDevices();
+    
 }
 //===========================================
 //===========================================

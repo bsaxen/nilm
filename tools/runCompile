@@ -1,0 +1,2 @@
+gcc -o graphN graphN.c -lncurses -lm
+gcc -o stateFinderN stateFinderN.c -lncurses -lm

@@ -4,6 +4,15 @@
 // gcc -o libN libN.c -lncurses -lm
 // Version: 2016-01-30
 //======================================
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+
 #define DATA_MAX 86401
 //#define X_MAX 500
 //#define Y_MAX 500
@@ -213,11 +222,11 @@ for(i=left;i<right;i++)
   //t = g_pi*i/200;
   //v = sin(g_pi*i/200)*t*t;
   v = 
-      lib_squareWave(0.0 ,50.0,100.0,50.0, t)+
-      lib_squareWave(10.0,80.0, 500.0,50.0, t)+
-      //lib_squareWave(20.0,160.0, 133.0,50.0, t)+
-      //lib_squareWave(30.0,220.0, 1570.0,1250.0, t)+
-      lib_squareWave(40.0,800.0,200.0,70.0, t);
+      lib_squareWave(10.0,1100.0, 110.0,50.0, t)+
+      lib_squareWave(20.0,200.0, 1200.0,50.0, t)+
+      lib_squareWave(30.0,2300.0, 300.0,50.0, t)+
+      lib_squareWave(40.0,400.0, 1200.0,50.0, t)+
+      lib_squareWave(50.0,5100.0, 500.0,50.0, t);
       
   g_xdata[n] = t;
   g_ydata[n] = v;
