@@ -234,7 +234,7 @@ int lib_stepFunction(int s,int h,int x)
     //
     int y;
     if(x >= s) y = h;
-    if(x < s)  y = 0.0;
+    if(x < s)  y = 0;
     return(y);    
 }
 //========================================
@@ -272,7 +272,8 @@ int lib_squareWave(int s,int h,int T,int p, int x)
     
     int y,temp;
  
-    int z = floor(x/T); x = x-z*T;
+    float z = floor(x/T); 
+    x = x-z*T;
     temp = T-p;
     y = lib_squareFunction(s,h,temp,x);
     return(y);    
