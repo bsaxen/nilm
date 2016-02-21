@@ -22,6 +22,7 @@ int g_hour,g_minute,g_second;
 int g_dataSource = 1;
 int g_mode = 1;
 int g_display,g_nData,g_selectedFile,g_zn;
+int g_n_nilm_files = 0;
 
 
 float g_xmin=9999.,g_xmax=0.,g_ymin=9999.,g_ymax=0.;
@@ -29,6 +30,7 @@ float g_wxmax=0., g_wxmin=999999.,g_wymax=0., g_wymin=999999.;
 //char str[40],sstr[20];
 //char command[40][40];
 char g_data_file[120];
+char g_loadedFile[120];
 int g_selected_file = 1,g_chan = 1;
 //char g_area[X_MAX][Y_MAX];
 float g_xdata[DATA_MAX],g_ydata[DATA_MAX],g_der[DATA_MAX];
@@ -69,14 +71,15 @@ int lib_readNilmFile(int mode,char *selectedFile)
        {
           g_xdata[i] = 0.0;
           g_ydata[i] = 0.0;
-          g_xvalue[i] = 0.0;
+          g_xvalue[i] = 1.234567;
        }
        g_xmin=9999.;
        g_xmax=0.;
        g_ymin=9999.;
        g_ymax=0.;
     
-
+       strcpy(g_loadedFile,selectedFile);
+    
        in = fopen(selectedFile,"r");
        if(in == NULL)
        {
@@ -118,7 +121,7 @@ int lib_readNilmFile(int mode,char *selectedFile)
         fclose(in);
         for(i=1;i<DATA_MAX;i++)
         {
-            if(g_xvalue[i] == 0.0) g_xvalue[i] = g_xvalue[i-1];
+            if(g_xvalue[i] == 1.234567) g_xvalue[i] = g_xvalue[i-1];
         }
       } 
     g_xdata[0] = n;

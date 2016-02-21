@@ -2,7 +2,7 @@
 // graphN.c
 // apt-get install ncurses-dev
 // gcc -o graphN graphN.c -lncurses -lm
-// Version: 2016-01-30
+// Version: 2016-02-19
 //======================================
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +60,28 @@ float r_ymax=0.0,r_ymin=0.0,r_xmin=0.0,r_xmax=0.0;
 int generatedData();
 
 //========================================
+int countlines(char filename[])
+//========================================
+{                                  
+  FILE *fp;
+  int ch=0;
+  int lines=0;
+
+  fp = fopen(filename,"r");
+  if (fp == NULL)return 9;
+
+  while(!feof(fp))
+  {
+    ch = fgetc(fp);
+    if(ch == '\n')
+    {
+      lines++;
+    }
+  }
+  fclose(fp);
+  return lines;
+}
+//========================================
 void list_all_nilm_files()
 //========================================
 {
@@ -103,75 +125,6 @@ void list_all_nilm_files()
     return;
   }
 }
-//========================================
-int derivata()
-//========================================
-{
-    int i,n;
-    float v;
-    
-    n = g_xdata[0];
-    g_ymin=9999.;
-    g_ymax=0.;
-    
-    //printf("n=%d\n",n);exit(0);
-    for(i=2;i<=n;i++)
-    {
-        v = g_ydata[i] - g_ydata[i-1];
-        g_der[i] = v;
-        if(g_ymax < v)g_ymax = v;
-        if(g_ymin > v)g_ymin = v;
-    }
-    for(i=1;i<n;i++)
-    {
-        g_ydata[i] = g_der[i+1];
-    }
-    n = n-1;
-    return(n);
-}
-//========================================
-int frequency()
-//========================================
-{
-    int i,n,itemp;
-    float t,v,DIV=1;
-    
-    n = g_xdata[0];
-    g_ymin=9999.;
-    g_ymax=0.;
-    g_xmin=9999.;
-    g_xmax=0.;
-
-    DIV = g_ymax/DATA_MAX;
-    if(DIV < 1)DIV = 1;
-    mvwprintw(misc,misc_h-5,1,"DIV = %.3f >",DIV);    
-    for(i=0;i<DATA_MAX;i++)
-    {
-          g_freq[i] = 0.0;
-    }
-    for(i=1;i<=n;i++)
-    {
-        itemp = floor(g_ydata[i]/DIV);
-        if(itemp < 0)itemp = -itemp;
-        g_freq[itemp]++;
-        v = g_freq[itemp];
-        t = itemp;
-        if(g_ymax < v)g_ymax = v;
-        if(g_ymin > v)g_ymin = v;
-        if(g_xmax < t)g_xmax = t;
-        if(g_xmin > t)g_xmin = t;
-    }
-    n=g_xmax;
-    mvwprintw(misc,misc_h-4,1,"g_xmax = %.3f >",g_xmax);
-    for(i=1;i<=n;i++)
-    {
-        g_ydata[i] = g_freq[i];
-        g_xdata[i] = i;
-    }
-    r_xmin = 0; r_xmax = n;
-    r_ymin = 0; r_ymax = g_ymax;
-    return(n);
-}
 
 //========================================
 void prep_area(int ndata,float xdata[],float ydata[], float left, float right, float down, float top)
@@ -181,7 +134,8 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       wclear(graph); 
 
       int i,j,k,ix,iy,zeroline,plot[WORLD][WORLD];
-      float dx,dy,tx,ty;
+      float dx,dy,tx,ty,ave_y;
+      int old_ix = 0;
  
       dx = (right - left)/graph_w;
       dy = (top - down)/graph_h;
@@ -215,7 +169,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       int iy2 = origo +(top-midY)/dy + 0.5;
       if(iy2 < 0)iy2=0;
       //wmove(misc,1,2);wprintw(misc,"ndata=%d ix0=%d iy0=%d ix1=%d ix2=%d iy1=%d iy2=%d\n",ndata,ix0,iy0,ix1,ix2,iy1,iy2);
-      wmove(misc,2,2);wprintw(misc,"ndata=%d",ndata);
+      
       lib_valToHourMinSec(left);
       wmove(misc,1,2);wprintw(misc,"%2d:%2d:%2d",g_hour,g_minute,g_second); 
       int mid = (right + left)/2;
@@ -224,24 +178,43 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       lib_valToHourMinSec(right);
       wmove(misc,1,22);wprintw(misc,"%2d:%2d:%2d",g_hour,g_minute,g_second);    
       lib_valToHourMinSec(dx);
-      wmove(misc,1,32);wprintw(misc,"d=%2d:%2d:%2d",g_hour,g_minute,g_second);    
+      wmove(misc,1,32);wprintw(misc,"(%2d:%2d:%2d)",g_hour,g_minute,g_second);    
 
-      wmove(misc,2,22);wprintw(misc,"value=%.2f     ",g_xvalue[mid]);    
+      wmove(misc,2,2);wprintw(misc,"[%d]->%d ->%.2f",ndata,mid,g_xvalue[mid]); 
+    
+      wmove(misc,3,2);wprintw(misc,"X-axis [%.0f,%.0f]=%.2f",left,right,dx);
+    
+      wmove(misc,4,2);wprintw(misc,"Y-axis [%.0f,%.0f]=%.2f",down,top,dy);    
     
       for(i=iy1;i<=iy2;i++)plot[ix0][i] = 4;
       for(i=ix1;i<=ix2;i++)plot[i][iy0] = 3;
       plot[ix0][iy0] = 2;
       
+    
+      k = 0;
       for(i=1;i<=ndata;i++)
       {       
         tx = xdata[i]; ty = ydata[i];
         if((tx >= left && tx <= right))
         {
+              k++;
               ix = origo + (tx-midX)/dx + 0.5;
-              iy = origo + (ty-midY)/dy + 0.5;
-              if(iy > iy0)for(j=iy;j>iy0;j--)plot[ix][j] = 1;
-              if(iy < iy0)for(j=iy;j<iy0;j++)plot[ix][j] = 1;
-              plot[ix][iy] = 5;
+              ave_y = ave_y + ty;
+              if(old_ix != ix)
+              {   
+                ave_y = ave_y/k;
+                iy = origo + (ave_y-midY)/dy + 0.5;
+                if(iy > iy0)for(j=iy;j>iy0;j--)plot[ix][j] = 1;
+                if(iy < iy0)for(j=iy;j<iy0;j++)plot[ix][j] = 1;
+                if(i == mid)
+                  plot[ix][iy] = 8; 
+                else
+                  plot[ix][iy] = 5; 
+
+                old_ix = ix;
+                k = 0;
+                ave_y = 0.0;
+              }
         }
         if(g_wxmax < tx)g_wxmax = tx;
         if(g_wxmin > tx)g_wxmin = tx;
@@ -258,13 +231,15 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
             ix = origo+i-graph_w/2;
             iy = origo+j-graph_h/2;
             wmove(graph,graph_h-j,i);
+     
             if(plot[ix][iy] == 1)wprintw(graph,"."); // fill 
-            if(plot[ix][iy] == 2)wprintw(graph,"o"); // origi
+            if(plot[ix][iy] == 2)wprintw(graph,"o"); // origo
             if(plot[ix][iy] == 3)wprintw(graph,"-"); // x-axis
             if(plot[ix][iy] == 4)wprintw(graph,"|"); // y-axis
             if(plot[ix][iy] == 5)wprintw(graph,"*"); // top value
             if(plot[ix][iy] == 6)wprintw(graph,"="); // left corner
             if(plot[ix][iy] == 7)wprintw(graph,"+"); // right corner
+            if(plot[ix][iy] == 8)wprintw(graph,"B"); // mid marker
         }
       }
 
@@ -278,17 +253,17 @@ void show(WINDOW *win)
   if(win == graph)
   {
      wmove(win,0,2);
-     wprintw(win," Graph ");
+     wprintw(win,g_loadedFile);
   }
   if(win == data)
   {
      wmove(win,0,2);
-     wprintw(win," Data ");
+     wprintw(win,"nilm Files");
   }
   if(win == misc)
   {
      wmove(win,0,2);
-     wprintw(win," Misc ");
+     wprintw(win," 2016-02-19 Status ");
   }
   if(win == feedback)
   {
@@ -351,7 +326,7 @@ void runMode()
       show(graph); show(data); show(misc);show(feedback);         
       wmove(misc,misc_h-2,1);
       wprintw(misc,"                                    ");
-      mvwprintw(misc,misc_h-2,1,"RUN%d>",g_mode);
+      mvwprintw(misc,misc_h-2,1,"%d-%d>",g_n_nilm_files,g_selected_file);
       sprintf(g_errMsg,"-");       
       wrefresh(misc);
       ch = getchar();
@@ -384,24 +359,32 @@ void runMode()
             g_chan = 4;
             g_nData = lib_readNilmFile(g_mode,g_data_file);
       }
-      else if (ch=='n')
+      else if (ch=='g')
       {
-          lib_writeErrMsg("n - next nilm data file");
-          g_selected_file++;
-          list_all_nilm_files();
+          lib_writeErrMsg("g - read nilm data file");
           g_nData = lib_readNilmFile(g_mode,g_data_file);
           r_xmin = g_xmin;r_xmax = g_xmax;
           r_ymin = g_ymin;r_ymax = g_ymax;
  
       }
+      else if (ch=='n')
+      {
+          lib_writeErrMsg("n - next nilm data file");
+          if(g_selected_file < g_n_nilm_files)g_selected_file++;
+          list_all_nilm_files();
+          //g_nData = lib_readNilmFile(g_mode,g_data_file);
+          //r_xmin = g_xmin;r_xmax = g_xmax;
+          //r_ymin = g_ymin;r_ymax = g_ymax;
+ 
+      }
       else if (ch=='p')
       {
           lib_writeErrMsg("p - previous nilm data file");
-          g_selected_file--;
+          if(g_selected_file > 1)g_selected_file--;
           list_all_nilm_files();
-          g_nData = lib_readNilmFile(g_mode,g_data_file);
-          r_xmin = g_xmin;r_xmax = g_xmax;
-          r_ymin = g_ymin;r_ymax = g_ymax;
+          //g_nData = lib_readNilmFile(g_mode,g_data_file);
+          //r_xmin = g_xmin;r_xmax = g_xmax;
+          //r_ymin = g_ymin;r_ymax = g_ymax;
       }
       else if (ch=='b')
 	  {
@@ -429,13 +412,29 @@ void runMode()
 	  }
       else if (ch=='z')
 	  {
-          lib_writeErrMsg("z - X zoom in");
-          r_xmin = r_xmin+xdelta;
-          r_xmax = r_xmax-xdelta;
+          if(xdelta >= 1.0)
+          {
+            sprintf(stemp,"z - X zoom in %.2f",xdelta);
+   
+            r_xmin = r_xmin+xdelta;
+            r_xmax = r_xmax-xdelta;
+          }
+          else
+             sprintf(stemp,"z - MAX X zoom "); 
+          lib_writeErrMsg(stemp);
+	  }
+      else if (ch=='w')
+	  {
+          xdelta = 1.0;
+          sprintf(stemp,"1 - MAX X zoom in %.2f",xdelta);
+          r_xmin = (g_wxmax + g_wxmin)/2 - graph_w/2;
+          r_xmax = (g_wxmax + g_wxmin)/2 + graph_w/2;
+          lib_writeErrMsg(stemp);
 	  }
       else if (ch=='Z')
 	  {
-          lib_writeErrMsg("Z - X zoom out");
+          sprintf(stemp,"z - X zoom out %.2f",xdelta);
+          lib_writeErrMsg(stemp);
           r_xmin = r_xmin-xdelta;
           r_xmax = r_xmax+xdelta;
 	  }
@@ -476,9 +475,9 @@ void runMode()
           r_ymin = r_ymin+ydelta;
           r_ymax = r_ymax+ydelta;
 	  }
-      else if (ch=='m')
+      else if (ch=='y')
 	  {
-          lib_writeErrMsg("m - change mode");
+          lib_writeErrMsg("m - mid Y");
           g_mode++;
           if (g_mode>2)g_mode=1;
 	  }     
@@ -502,48 +501,44 @@ void openCommand()
   char command[40][40];
 
   list_all_nilm_files();
+  g_n_nilm_files = countlines("nilm_data_file_list.wrk");
   g_nData = lib_readNilmFile(g_mode,g_data_file);
   r_xmin = g_xmin;r_xmax = g_xmax;
   r_ymin = g_ymin;r_ymax = g_ymax;
   prep_area(g_nData,g_xdata,g_ydata, r_xmin, r_xmax, r_ymin, r_ymax);     
+  
     
-  while(strstr(str,"ex") == NULL)
-  {
-      displayErrMsg();
-      show(graph); show(data);show(misc);show(feedback);
-      wmove(misc,misc_h-2,1);
-      wprintw(misc,"                                                  ");
-      mvwprintw(misc,misc_h-2,1,"nilm>");
-      wrefresh(misc);
-      strcpy(command[0],"");
-      wgetstr(misc,str);
-      n = tokCommand(command,str);
-      strcpy(sstr,command[0]);
-      sprintf(g_errMsg,"-");
-      if(strstr(sstr,"he"))
-        {
-          // TBD
-        }
-      if(strstr(sstr,"run"))
-        {
-          runMode();
-        }
-      if(strstr(sstr,"gen"))
-        {
-          n = lib_generatedData("autoGraph",0,86400);
-          list_all_nilm_files();
-          sprintf(g_errMsg,"NILM Data File generated entries=%d",n); 
-          g_nData = lib_readNilmFile(g_mode,g_data_file);
-          r_xmin = g_xmin;r_xmax = g_xmax;
-          r_ymin = g_ymin;r_ymax = g_ymax;
-          prep_area(g_nData,g_xdata,g_ydata, r_xmin, r_xmax, r_ymin, r_ymax);     
-        }
-      else if(strlen(sstr) > 0) 
-        {
-          sprintf(g_errMsg,"Unknown command: %s",sstr); 
-          //lib_writeErrMsg(stemp);
-        }
-  }
+  runMode();    
+    
+//  while(strstr(str,"ex") == NULL)
+//  {
+//      displayErrMsg();
+//      show(graph); show(data);show(misc);show(feedback);
+//      wmove(misc,misc_h-2,1);
+//      wprintw(misc,"                                                  ");
+//      mvwprintw(misc,misc_h-2,1,"nilm>");
+//      wrefresh(misc);
+//      strcpy(command[0],"");
+//      wgetstr(misc,str);
+//      n = tokCommand(command,str);
+//      strcpy(sstr,command[0]);
+//      sprintf(g_errMsg,"-");
+//      if(strstr(sstr,"he"))
+//        {
+//          // TBD
+//        }
+//      if(strstr(sstr,"run"))
+//        {
+//          runMode();
+//        }
+//      else if(strlen(sstr) > 0) 
+//        {
+//          sprintf(g_errMsg,"Unknown command: %s",sstr); 
+//          //lib_writeErrMsg(stemp);
+//        }
+//  }
+    
+    return;
 }
 //====================================
 int main(int argc, char *argv[])
@@ -552,9 +547,9 @@ int main(int argc, char *argv[])
   char syscom[120];
   int ch,i,x;
 
-initscr();
-clear();
-cbreak();
+  initscr();
+  clear();
+  cbreak();
 
 //strcpy(g_errMsg,"No errors detected");    
     

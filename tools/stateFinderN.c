@@ -76,7 +76,7 @@ void stateFinderFunc()
    int i,j;
    float left,right;
    //n_data = lib_readNilmFile(1,"../../nytomta/data-302-2016-01-13.nbc");
-   n_data = lib_readNilmFile(1,"autoGraph.nilm");
+   n_data = lib_readNilmFile(1,"generatedData.nilm");
    g_pmax = g_ymax;
    g_pmin = g_ymin; 
    nSub = (int)((g_pmax - g_pmin)/fSub);
@@ -245,23 +245,23 @@ void stateFreqFinderFunc()
         M[state_transition_from[i]][state_transition_to[i]]++;
     }
     
-    printf("   ");
-    for(j=0;j<=n_state;j++)printf("%3d ",j);
+    printf("M   ");
+    for(j=0;j<=n_state;j++)printf("%4d ",j);
     printf("\n");
     for(i=0;i<=n_state;i++)
     {
-        printf("%2d ",i);
-        for(j=0;j<=n_state;j++)printf("%3d ",M[i][j]);
+        printf("%3d ",i);
+        for(j=0;j<=n_state;j++)printf("%4d ",M[i][j]);
         printf("%5.0f\n",g_state[i]);
     }
     
     printf("\n");
-    printf("   ");
-    for(j=0;j<=n_state;j++)printf("%s%3d ",KNRM,j);
+    printf("X   ");
+    for(j=0;j<=n_state;j++)printf("%s%4d ",KNRM,j);
     printf("\n");
     for(i=0;i<=n_state;i++)
     {
-        printf("%2d ",i);
+        printf("%3d ",i);
         for(j=0;j<=n_state;j++)
         {
             ftemp = (g_state[j]-g_state[i]);
@@ -271,16 +271,16 @@ void stateFreqFinderFunc()
                 if(ftemp < 0.0)
                 {
                     ftemp = abs(ftemp);
-                    printf("%s%3.0f ",KYEL,ftemp);
+                    printf("%s%4.0f ",KYEL,ftemp);
                 }
                 else
                 {
-                    printf("%s%3.0f ",KGRN,ftemp);
+                    printf("%s%4.0f ",KGRN,ftemp);
                     n_dev = addDevice(ftemp);
                 }
             }
             else 
-                printf("    ");
+                printf("     ");
         }
         printf("%s%5.0f\n",KNRM,g_state[i]);
     }

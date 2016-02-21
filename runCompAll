@@ -1,0 +1,2 @@
+gcc -o nilm_generate nilm_generate.c -lncurses -lm
+gcc -o nilm_identify nilm_identify.c -lncurses -lm

@@ -1,7 +1,7 @@
 //===========================================
 // nilm_generate.c
 // gcc -o nilm_generate nilm_generate.c -lm
-// 2016-02-16
+// 2016-02-19
 //===========================================
 
 #include "nilm_lib.c"
@@ -12,8 +12,13 @@ int main(int argc, char **argv)
 {
     char devModFile[120];
     int i,j,t,v,left,right,s,d,p,h,low;
+    FILE* fp;
     
     lib_nilmInit();
+    
+    printf("1 nilm_generate <nilm model file>\n");
+    printf("2 nilm_generate <left> <right>\n");
+    printf("3 nilm_generate <nilm model file> <left> <right>\n"); 
     
     if(argc == 1)
     {
@@ -49,7 +54,12 @@ int main(int argc, char **argv)
     else
         g_nDevices = n;
     
-    //exit(0);
+    
+    if ((fp = fopen("generatedData.nilm", "w")) == NULL)
+    { 
+      lib_nilmError("Unable to open-write generated Nilm Data file",0);
+      exit(0);
+    }
     
     n = 0;
     for(i=left;i<=right;i++)
@@ -80,16 +90,17 @@ int main(int argc, char **argv)
         low = p - d;
         v = lib_squareWave(s,h,p,low,t);
         sum = sum + v;
-        printf("sum=%d v=%d %d %d %d %d %d %d\n",sum,v,j,s,h,p,low,t);
+        //printf("sum=%d v=%d %d %d %d %d %d %d\n",sum,v,j,s,h,p,low,t);
       }
       
       g_xData[n] = t;
-      g_yData[n] = v;
-      if(g_yMax < v)g_yMax = v;
-      if(g_yMin > v)g_yMin = v;
+      g_yData[n] = sum;
+      if(g_yMax < sum)g_yMax = sum;
+      if(g_yMin > sum)g_yMin = sum;
       if(g_xMax < t)g_xMax = t;
       if(g_xMin > t)g_xMin = t;
       lib_valToHourMinSec(t);
-      printf("%d %d:%d:%d %d \n",i,g_hour,g_minute,g_second,v);
+      fprintf(fp,"%d:%d:%d %.2f \n",g_hour,g_minute,g_second,(float)sum);
    }
+   fclose(fp);
 }

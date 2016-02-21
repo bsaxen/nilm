@@ -5,8 +5,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <math.h>
+#include <time.h> 
+#include <math.h> 
+#include <ctype.h>
+#include <termios.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/stat.h>
+#include <form.h>
+
+#include <sys/ioctl.h>
+
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
 
 #define MAX_DEVICES        10
 #define MAX_DATA        86401
@@ -165,20 +182,20 @@ int lib_readDeviceModel(char filename[])
   while (fgets(buf, sizeof(buf), fp) != NULL)
   {
     buf[strlen(buf) - 1] = '\0';
-      printf("a:%s\n",buf);
+      //printf("a:%s\n",buf);
     for(i=0;i<N_DEVICE_PAR;i++)
     {
       sscanf(buf,"%s %d",key,&itemp);
       if(strstr(g_device_par_name[i],key) != NULL)
       {
         res = lib_checkValue(g_device_par_name[i],itemp);
-        printf("n=%d res=%d %s itemp=%d\n",n,res,g_device_par_name[i],itemp);
+        //printf("n=%d res=%d %s itemp=%d\n",n,res,g_device_par_name[i],itemp);
         g_device[n][i] = res;
         pc[i]++;
         if(i == IX_DEVICE_ID)
         {
             n++;
-            printf("b:%s\n",buf);
+            //printf("b:%s\n",buf);
           for(j=0;j<N_DEVICE_PAR;j++)pc[j] = 0;
         }
       }
