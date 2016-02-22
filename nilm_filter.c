@@ -35,6 +35,8 @@ main ()
   int x[MAX_DATA];
   int dev=0; 
   
+  // First - interpolate y values for all x (seconds)
+  
   for(j=ymin;j<=ymax;j++)
   {
     center[j] = getSpectrum(j,1);
@@ -42,9 +44,10 @@ main ()
 
   // find maximums
   k = 0;
-  for(j=ymin+1;j<ymax;j++)
+  int wid = 3;
+  for(j=ymin+win;j<=ymax-win;j++)
   {
-    if(center[j-1] < center[j] && center[j+1] < center[j]  )
+    if(center[j-win] < center[j] && center[j+win] < center[j]  )
     {
       maximum[k] = j;
       k++;
@@ -72,11 +75,11 @@ main ()
     for(k=0;k<kmax;k++)
     {
       if(ydata[i] > maximum[k] - deviation[k] && ydata[i] < > maximum[k] + deviation[k])
-        y[i] = maximum[k];
+        y[i] = maximum[k]; // associate system state to y-value
       else
-        y[i] = y[i-1];
+        y[i] = y[i-1]; // if no system state association, set previuos association
     }
-    printf("%d %d\n",i,y[i]); // pre-processed data
+    printf("%d %d\n",i,y[i]); // pre-processed data, TBD convert i to hh:mm:ss
   }
 // based on state levels - generate new data
 }
