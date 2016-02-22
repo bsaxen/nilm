@@ -289,6 +289,8 @@ int lib_squareWave(int s,int h,int T,int p, int x)
     
     int y,temp;
  
+    if(x < s)return(0);
+    x = x-s; s = 0;
     float z = floor(x/T); 
     x = x-z*T;
     temp = T-p;

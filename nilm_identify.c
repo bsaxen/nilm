@@ -2,7 +2,7 @@
 // nilm_identify.c
 // apt-get install ncurses-dev
 // gcc -o nilm_identify nilm_identify.c -lncurses -lm
-// 2016-02-21
+// 2016-02-22
 //===========================================
 #include "nilm_lib.c"
 
@@ -27,14 +27,14 @@ int misc_h=0, misc_w=0, misc_x=0, misc_y=0;
 int feedback_w=0,feedback_h=0,feedback_x=0,feedback_y=0;
 int ap,dp,s_row,s_col,pos=0;
 
-float g_pmin,g_pmax;
+int g_pmin,g_pmax;
 int n_trans = 0;
 int n_state = 0;
 int n_data = 0;
 int n_dev = 0;
 
 //================================
-float fSub = 1.;
+int fSub = 1;
 int thresholdA = 50;
 int g_filter = 0;
 //float fSub = 1.;
@@ -42,12 +42,12 @@ int g_filter = 0;
 //================================
 int nSub;
 int g_nfreq[MAX_DATA], g_time[MAX_DATA];
-float g_state[MAX_DATA];
+int g_state[MAX_DATA];
 int g_device_duration[MAX_DATA];
 int state_transition_from[MAX_DATA];
 int state_transition_to[MAX_DATA];
 int state_transition_time[MAX_DATA];
-float state_transition_delta[MAX_DATA];
+int state_transition_delta[MAX_DATA];
 int M[2000][2000];
 
 char g_loadedFile[120];
@@ -84,7 +84,7 @@ void init()
 
 	for(i=0;i<MAX_DEVICES;i++) 
     {
-        g_device[i][IX_DEVICE_HEIGHT] = 0.0;
+        g_device[i][IX_DEVICE_HEIGHT] = 0;
         g_device_duration[i] = 0;
     }
     for(i=0;i<MAX_DATA;i++) 
@@ -95,7 +95,7 @@ void init()
         state_transition_from[i] = 0;
         state_transition_to[i] = 0;
         state_transition_time[i] = 0;
-        state_transition_delta[i] = 0.0;
+        state_transition_delta[i] = 0;
     }
 }
 
@@ -104,47 +104,44 @@ void stateFinderFunc()
 //===========================================
 {
    int i,j;
-   float left,right;
+   int left,right;
 
    n_data = lib_readNilmFile("generatedData.nilm");
    g_pmax = g_yMax;
    g_pmin = g_yMin; 
+   fSub = 1;
    nSub = (int)((g_pmax - g_pmin)/fSub);
-   wmove(misc,4,2);wprintw(misc,"min=%0.f max=%.0f\n",g_pmin,g_pmax);
+   wmove(misc,4,2);wprintw(misc,"min=%d max=%d\n",g_pmin,g_pmax);
     
-    if(g_pmax < 10000) g_nd = 4;
-    if(g_pmax < 1000) g_nd = 3;
-    if(g_pmax < 100) g_nd = 2;
-    if(g_pmax < 10) g_nd = 1;
-
-   float subInt = fSub;//(g_pmax- g_pmin)/nSub;
-   //printf("subInt=%f\n",subInt);
+    if(g_pmax < 10000) g_nd = 5;
+    if(g_pmax < 1000) g_nd = 4;
+    if(g_pmax < 100) g_nd = 3;
+    if(g_pmax < 10) g_nd = 2;
 
    for(i=0;i<=nSub;i++)
    {
-        left = g_pmin +i*subInt;
-        right = g_pmin + (i+1)*subInt;
+        left = g_pmin +i*fSub;
+        right = g_pmin + (i+1)*fSub;
         for(j=1;j<=n_data;j++)
         {
 	     if(g_yData[j]>left && g_yData[j]<=right) g_nfreq[i]++;
         }
    }
    int k=0,m=0,check;
-   float sum = 0.;
+   int sum = 0;
    g_state[0] = g_yMin;
    for(i=0;i<=nSub;i++)
    {
-     float ftemp = i*subInt+subInt/2;
+     //int ftemp = i*fSub+fSub/2;
      if(g_nfreq[i] > thresholdA)
      {
          k++;
-         g_state[k] = ftemp + (int)(fSub/2);
-         //printf("state=%3d sub=%3d freq=%3d value=%5.1f\n",k,i,g_nfreq[i],ftemp);
+         g_state[k] = fSub*i+1;
      }
    }
    wmove(misc,1,2);wprintw(misc,"Bias = %d\n",g_yMin);
    n_state = k;
-   wmove(misc,2,2);wprintw(misc,"Data = %d fSub=%.0f threshold=%d filter=%d => states=%d\n",n_data,fSub,thresholdA,g_filter,n_state);
+   wmove(misc,2,2);wprintw(misc,"Data = %d fSub=%d threshold=%d filter=%d => states=%d\n",n_data,fSub,thresholdA,g_filter,n_state);
 }
 //===========================================
 int getState(float x)
@@ -167,7 +164,7 @@ void stateSeqFinderFunc()
 //===========================================
 {
     int i,k=0,st=0,prev_st=0;
-    float delta,sum=0;
+    int delta,sum=0;
     
     st = getState(g_yMin); //bias
     for(i=1;i<=n_data;i++)
@@ -198,7 +195,7 @@ void stateSeqFinderFunc()
             state_transition_delta[k] = delta;
     }
     
-    wmove(misc,3,2);wprintw(misc,"State transitions = %d sum=%.0f\n",k,sum);
+    wmove(misc,3,2);wprintw(misc,"State transitions = %d sum=%d\n",k,sum);
     n_trans = k;
 }
 //===========================================
@@ -219,6 +216,7 @@ void listDevices()
 //===========================================
 {
     int i;
+    wclear(data); 
     for(i=1;i<=n_dev;i++)
     {
         wmove(data,i,2);wprintw(data,"List device %d %d duration=%d\n",i,g_device[i][IX_DEVICE_HEIGHT],g_device_duration[i]);
@@ -229,7 +227,7 @@ void getDeviceEnergy()
 //===========================================
 {
     int i,j,itemp,t1,t2,n;
-    float delta; 
+    int delta; 
     
     for(i=1;i<=n_dev;i++)
     {
@@ -268,16 +266,18 @@ void nilm_printw_int(WINDOW *win, int x, int nd)
     if(nd == 1) wprintw(win,"%1d ",x);
     if(nd == 2) wprintw(win,"%2d ",x);
     if(nd == 3) wprintw(win,"%3d ",x);
-    if(nd == 4) wprintw(win,"%4d ",x);
+    if(nd == 4) wprintw(win,"%4d ",x);    
+    if(nd == 5) wprintw(win,"%5d ",x);
 }
 //===========================================
-void nilm_printw_float(WINDOW *win, float x, int nd)
+void nilm_printw_float(WINDOW *win, int x, int nd)
 //===========================================
 {
     if(nd == 1) wprintw(win,"%1.0f ",x);
     if(nd == 2) wprintw(win,"%2.0f ",x);
     if(nd == 3) wprintw(win,"%3.0f ",x);
     if(nd == 4) wprintw(win,"%4.0f ",x);
+    if(nd == 5) wprintw(win,"%5.0f ",x);
 }
 
 
@@ -289,6 +289,7 @@ void nilm_printw_space(WINDOW *win, int nd)
     if(nd == 2) wprintw(win,"   ");
     if(nd == 3) wprintw(win,"    ");
     if(nd == 4) wprintw(win,"     ");
+    if(nd == 5) wprintw(win,"      ");    
 }
 //===========================================
 void stateFreqFinderFunc()
@@ -333,25 +334,30 @@ void stateFreqFinderFunc()
             
             
         }
-        wmove(graph1,2*i+2,5+j*5);
-        nilm_printw_float(graph1, g_state[i], g_nd);
+        //wmove(graph1,2*i+2,5+j*5);
+        nilm_wmove(graph1,2*i+2,g_nd+1,j,g_nd);
+        nilm_printw_int(graph1, g_state[i], g_nd);
     }
     
     //---------------------------------------
 
     for(j=0;j<=n_state;j++)
     {
-        wmove(graph2,1,5+j*5);
-        wprintw(graph2,"%4d ",j);
+        //wmove(graph2,1,5+j*5);
+        //wprintw(graph2,"%4d ",j);
+        nilm_wmove(graph2,1,g_nd+1,j,g_nd);
+        nilm_printw_int(graph2,j,g_nd);
     }
  
     for(i=0;i<=n_state;i++)
     {
-        wmove(graph2,2*i+2,1);wprintw(graph2,"%3d ",i);
+        wmove(graph2,2*i+2,1);
+        nilm_printw_int(graph2,i,g_nd);
+        //wmove(graph2,2*i+2,1);wprintw(graph2,"%3d ",i);
         for(j=0;j<=n_state;j++)
         {
-            wmove(graph2,2*i+2,5+j*5);
-            
+            //wmove(graph2,2*i+2,5+j*5);
+            nilm_wmove(graph2,2*i+2,g_nd+1,j,g_nd);
             
             
             //**********************************
@@ -360,25 +366,29 @@ void stateFreqFinderFunc()
             {
                 if(ftemp < 0)
                 {
-                    ftemp = abs(ftemp);
-                    wprintw(graph2,"%4d*",ftemp);
+                    //ftemp = abs(ftemp);
+                    //wprintw(graph2,"%4d*",ftemp);
+                    nilm_printw_int(graph2,ftemp,g_nd);
                 }
                 else
                 {
-                    wprintw(graph2,"%4d ",ftemp);
+                    nilm_printw_int(graph2,ftemp,g_nd);
+                    //wprintw(graph2,"%4d ",ftemp);
                     n_dev = addDevice(ftemp);
                 }
             }
             else 
-                wprintw(graph2,"     ");
+                //nilm_printw_int(graph2,n_dev,g_nd);
+                nilm_printw_space(graph2, g_nd);
             //**********************************
             
             
         }
-        wmove(graph2,2*i+2,5+j*5);wprintw(graph2,"%5.0f\n",g_state[i]);
+        nilm_wmove(graph2,2*i+2,g_nd+1,j,g_nd);
+        nilm_printw_int(graph2, g_state[i], g_nd); //wmove(graph2,2*i+2,5+j*5);wprintw(graph2,"%5d\n",g_state[i]);
     }
     //getDeviceEnergy();
-     
+    //listDevices();   
 }
 //====================================
 void show(WINDOW *win)
@@ -404,12 +414,12 @@ void show(WINDOW *win)
   if(win == misc)
   {
      wmove(win,0,2);
-     wprintw(win," 2016-02-21 NILM IDENTIFY ");
+     wprintw(win,"2016-02-21 NILM IDENTIFY");
   }
   if(win == feedback)
   {
      wmove(win,0,2);
-     wprintw(win," Feedback ");
+     wprintw(win,"Feedback");
   }
   wrefresh(win);
 }
