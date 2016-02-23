@@ -84,17 +84,17 @@ void init()
 
 	for(i=0;i<MAX_DEVICES;i++) 
     {
-        g_device[i][IX_DEVICE_HEIGHT] = 0;
-        g_device_duration[i] = 0;
+        g_device[i][IX_DEVICE_HEIGHT]   = 0;
+        g_device[i][IX_DEVICE_DURATION] = 0;
     }
     for(i=0;i<MAX_DATA;i++) 
     {
         g_nfreq[i] = 0;
-        g_time[i] = 0;
+        g_time[i]  = 0;
         g_state[i] = 0;
-        state_transition_from[i] = 0;
-        state_transition_to[i] = 0;
-        state_transition_time[i] = 0;
+        state_transition_from[i]  = 0;
+        state_transition_to[i]    = 0;
+        state_transition_time[i]  = 0;
         state_transition_delta[i] = 0;
     }
 }
@@ -219,7 +219,7 @@ void listDevices()
     wclear(data); 
     for(i=1;i<=n_dev;i++)
     {
-        wmove(data,i,2);wprintw(data,"List device %d %d duration=%d\n",i,g_device[i][IX_DEVICE_HEIGHT],g_device_duration[i]);
+        wmove(data,i,2);wprintw(data,"List device %d %d duration=%d\n",i,g_device[i][IX_DEVICE_HEIGHT],g_device[i][IX_DEVICE_DURATION]);
     }
 }
 //===========================================
@@ -239,17 +239,19 @@ void getDeviceEnergy()
            if(g_device[i][IX_DEVICE_HEIGHT] == delta)
            {
               t1 = state_transition_time[j];
+               sprintf(g_errMsg,"a j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
            }
            if(g_device[i][IX_DEVICE_HEIGHT] == -delta)
            {
               t2 = state_transition_time[j];
               itemp = t2 - t1;
-              g_device_duration[i] += itemp;
+              g_device[i][IX_DEVICE_DURATION] = g_device[i][IX_DEVICE_DURATION] + itemp;
               n++;
+              sprintf(g_errMsg,"b j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
            }
             
         }
-        g_device_duration[i] = g_device_duration[i]/n;
+        if(n>0)g_device[i][IX_DEVICE_DURATION] = g_device[i][IX_DEVICE_DURATION]/n;
     }
 }
 
@@ -325,7 +327,7 @@ void stateFreqFinderFunc()
             
             
             //**********************************
-            if(M[i][j] > 0)
+            if(M[i][j] > g_filter)
                 nilm_printw_int(graph1,M[i][j],g_nd);
             else
                 nilm_printw_space(graph1, g_nd);
@@ -503,11 +505,14 @@ init_pair(8,COLOR_RED,COLOR_BLACK);
 
     while(ch != 'q')  
     {
-        init();
-        stateFinderFunc();
-        stateSeqFinderFunc();
-        stateFreqFinderFunc();
-        listDevices();  
+      init();
+      lib_nilmInit();
+      stateFinderFunc();
+      stateSeqFinderFunc();
+      stateFreqFinderFunc();
+      listDevices();  
+      getDeviceEnergy();
+        
       displayErrMsg();
       show(graph1);
       show(graph2); 
