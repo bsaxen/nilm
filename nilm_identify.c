@@ -227,21 +227,27 @@ void getDeviceEnergy()
 //===========================================
 {
     int i,j,itemp,t1,t2,n;
-    int trans,devPow,devState,devDur; 
+    int trans,devPow,devState=0,devDur; 
     
     for(i=1;i<=n_dev;i++)
     {
     	devPow = g_device[i][IX_DEVICE_HEIGHT];
         n = 0;
+        devDur = 0;
         for(j=1;j<=n_trans;j++)
         {
            trans = state_transition_delta[j];
           
-           if(devPow == trans)
+           if(devPow == trans && devState == 0)
            {
               t1 = state_transition_time[j];
               devState = 1;//On
-              sprintf(g_errMsg,"a j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
+              sprintf(g_errMsg,"ON j=%d i=%d t1=%d t2=%d n=%d trans=%d",j,i,t1,t2,n,trans);
+           }
+           else if(devPow == trans)
+           {
+              sprintf(g_errMsg,"Out of sync-ON Energy calculation trans=%d device=%d",j,i);
+              lib_log(g_errMsg);
            }
            if(devPow == -trans && devState == 1)
            {
@@ -250,7 +256,12 @@ void getDeviceEnergy()
               devDur = devDur + t2 - t1;
               t1 = 0;
               n++;
-              sprintf(g_errMsg,"b j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
+              sprintf(g_errMsg,"OFF j=%d i=%d t1=%d t2=%d n=%d trans=%d",j,i,t1,t2,n,trans);
+           }
+           else if(devPow == -trans)
+           {
+              sprintf(g_errMsg,"Out of sync-OFF Energy calculation trans=%d device=%d",j,i);
+              lib_log(g_errMsg);
            }
             
         }
