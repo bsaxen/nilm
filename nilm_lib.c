@@ -52,6 +52,20 @@ int g_yMax=0;
 int g_hour,g_minute,g_second;
 
 //===========================================
+void lib_log(char msg[])
+//===========================================
+{
+  FILE* fp;
+  if ((fp = fopen("nilm_log.txt", "w")) == NULL)
+  { 
+    lib_nilmError("Unable to open-write nilm log file",0);
+    return;
+  }
+  fprintf(fp,"%s\n",msg);
+  fclose(fp);
+  return;
+}
+//===========================================
 void lib_nilmInit()
 //===========================================
 {
