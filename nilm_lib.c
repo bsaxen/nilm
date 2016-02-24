@@ -50,13 +50,19 @@ int g_yMin=99999;
 int g_yMax=0;
 
 int g_hour,g_minute,g_second;
-
+//===========================================
+void lib_nilmError(char msg[], int errno)
+//===========================================
+{
+  printf("NILM ERROR: %s errno=%d\n",msg,errno);
+  return;
+}
 //===========================================
 void lib_log(char msg[])
 //===========================================
 {
   FILE* fp;
-  if ((fp = fopen("nilm_log.txt", "w")) == NULL)
+  if ((fp = fopen("nilm_log.txt", "a+")) == NULL)
   { 
     lib_nilmError("Unable to open-write nilm log file",0);
     return;
@@ -85,13 +91,7 @@ void lib_nilmInit()
   g_device[0][IX_DEVICE_SUBDEV]     = 0;
   return;
 }
-//===========================================
-void lib_nilmError(char msg[], int errno)
-//===========================================
-{
-  printf("NILM ERROR: %s errno=%d\n",msg,errno);
-  return;
-}
+
 //===========================================
 int lib_checkValue(char par[], int value)
 //===========================================

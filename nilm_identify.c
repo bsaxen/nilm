@@ -15,6 +15,7 @@ static struct termios orig, nnew;
 #define MISC_COLOR 5
 #define FEEDBACK_COLOR 4
 #define WORLD 1000
+#define MAX_FREQ 10000
 
 #define RF 1 
 #define ER 1
@@ -44,6 +45,10 @@ int nSub;
 int g_nfreq[MAX_DATA], g_time[MAX_DATA];
 int g_state[MAX_DATA];
 int g_device_duration[MAX_DATA];
+int g_fDuration[MAX_DEVICES][10000];
+int g_fPeriod[MAX_DEVICES][10000];
+int g_totEnergy[MAX_DEVICES];
+    
 int state_transition_from[MAX_DATA];
 int state_transition_to[MAX_DATA];
 int state_transition_time[MAX_DATA];
@@ -76,7 +81,7 @@ void displayErrMsg()
 void init()
 //===========================================
 {
-	int i;
+	int i,j;
     
     n_dev = 0;
     n_trans = 0;
@@ -86,6 +91,12 @@ void init()
     {
         g_device[i][IX_DEVICE_HEIGHT]   = 0;
         g_device[i][IX_DEVICE_DURATION] = 0;
+        g_totEnergy[i] = 0;
+        for(j=0;j<MAX_FREQ;j++)
+        {
+            g_fDuration[i][j] = 0;
+            g_fPeriod[i][j] = 0;
+        }
     }
     for(i=0;i<MAX_DATA;i++) 
     {
@@ -97,6 +108,7 @@ void init()
         state_transition_time[i]  = 0;
         state_transition_delta[i] = 0;
     }
+    system("rm -f nilm_log.txt");
 }
 
 //===========================================
@@ -215,57 +227,96 @@ int addDevice(float x)
 void listDevices()
 //===========================================
 {
-    int i;
+    int i,k=0,h,d,p,e;
     wclear(data); 
     for(i=1;i<=n_dev;i++)
     {
-        wmove(data,i,2);wprintw(data,"List device %d %d duration=%d\n",i,g_device[i][IX_DEVICE_HEIGHT],g_device[i][IX_DEVICE_DURATION]);
+        h = g_device[i][IX_DEVICE_HEIGHT];
+        d = g_device[i][IX_DEVICE_DURATION];
+        p = g_device[i][IX_DEVICE_PERIOD];
+        if(d > 0 && p > 0)
+        {
+            k++;
+            e = d*h*3600*24/p;
+            wmove(data,k,2);
+            wprintw(data,"Device %d %d duration=%d period=%d Energy=%d(%d)\n",i,h,d,p,g_totEnergy[i],e);
+        }
     }
 }
 //===========================================
 void getDeviceEnergy()
 //===========================================
 {
-    int i,j,itemp,t1,t2,n;
-    int trans,devPow,devState=0,devDur; 
-    
+    int i,j,itemp,t1,t2,n,prev_t1,period;
+    int trans,devPow,devState=0,devDur,fmax1,fmax2; 
+
     for(i=1;i<=n_dev;i++)
     {
     	devPow = g_device[i][IX_DEVICE_HEIGHT];
         n = 0;
         devDur = 0;
+        prev_t1 = 0;
         for(j=1;j<=n_trans;j++)
         {
            trans = state_transition_delta[j];
-          
+           
            if(devPow == trans && devState == 0)
            {
               t1 = state_transition_time[j];
+              t2 = 0;
+              period = t1 - prev_t1;
+              g_fPeriod[i][period]++;
               devState = 1;//On
-              sprintf(g_errMsg,"ON j=%d i=%d t1=%d t2=%d n=%d trans=%d",j,i,t1,t2,n,trans);
+              sprintf(g_errMsg,"ON transIx=%d device=%d t1=%d n=%d trans=%d period=%d",j,i,t1,n,trans,period);
+              lib_log(g_errMsg);
            }
            else if(devPow == trans)
            {
-              sprintf(g_errMsg,"Out of sync-ON Energy calculation trans=%d device=%d",j,i);
+              sprintf(g_errMsg,"Out of sync-ON Energy calculation transIx=%d device=%d trans=%d*******",j,i,trans);
               lib_log(g_errMsg);
            }
+            
            if(devPow == -trans && devState == 1)
            {
               t2 = state_transition_time[j];
               devState = 0;//Off
               devDur = devDur + t2 - t1;
-              t1 = 0;
+              int ddur =  t2 - t1;
+              g_fDuration[i][ddur]++;
               n++;
-              sprintf(g_errMsg,"OFF j=%d i=%d t1=%d t2=%d n=%d trans=%d",j,i,t1,t2,n,trans);
+              sprintf(g_errMsg,"OFF transIx=%d device=%d t1=%d t2=%d n=%d trans=%d duration=%d",j,i,t1,t2,n,trans,ddur);
+              lib_log(g_errMsg);
+              prev_t1 = t1;
+              t1 = 0;
            }
            else if(devPow == -trans)
            {
-              sprintf(g_errMsg,"Out of sync-OFF Energy calculation trans=%d device=%d",j,i);
+              sprintf(g_errMsg,"Out of sync-OFF Energy calculation transIx=%d device=%d trans=%d ********",j,i,trans);
               lib_log(g_errMsg);
            }
             
         }
         if(n>0)g_device[i][IX_DEVICE_DURATION] = devDur/n;
+    }
+    for(i=1;i<=n_dev;i++)
+    {
+        fmax1 = 0; fmax2 = 0;
+        for(j=0;j<MAX_FREQ;j++)
+        {
+            if(g_fDuration[i][j] > fmax1)
+            {
+                fmax1 = g_fDuration[i][j];
+                g_device[i][IX_DEVICE_DURATION] = j;
+            }
+            if(g_fPeriod[i][j] > fmax2)
+            {
+                fmax2 = g_fPeriod[i][j];
+                g_device[i][IX_DEVICE_PERIOD] = j;
+            }
+        }
+        g_totEnergy[i] = fmax1*g_device[i][IX_DEVICE_HEIGHT] *g_device[i][IX_DEVICE_DURATION]; 
+        sprintf(g_errMsg,"device=%d fmax1=%d fmax2=%d",i,fmax1,fmax2);
+              lib_log(g_errMsg);
     }
 }
 
@@ -524,8 +575,9 @@ init_pair(8,COLOR_RED,COLOR_BLACK);
       stateFinderFunc();
       stateSeqFinderFunc();
       stateFreqFinderFunc();
-      listDevices();  
+ 
       getDeviceEnergy();
+      listDevices();  
         
       displayErrMsg();
       show(graph1);
