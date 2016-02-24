@@ -82,7 +82,7 @@ void init()
     n_trans = 0;
     n_state = 0;
 
-	for(i=0;i<MAX_DEVICES;i++) 
+    for(i=0;i<MAX_DEVICES;i++) 
     {
         g_device[i][IX_DEVICE_HEIGHT]   = 0;
         g_device[i][IX_DEVICE_DURATION] = 0;
@@ -227,31 +227,34 @@ void getDeviceEnergy()
 //===========================================
 {
     int i,j,itemp,t1,t2,n;
-    int delta; 
+    int trans,devPow,devState,devDur; 
     
     for(i=1;i<=n_dev;i++)
     {
+    	devPow = g_device[i][IX_DEVICE_HEIGHT];
         n = 0;
         for(j=1;j<=n_trans;j++)
         {
-           delta = state_transition_delta[j];
-        
-           if(g_device[i][IX_DEVICE_HEIGHT] == delta)
+           trans = state_transition_delta[j];
+          
+           if(devPow == trans)
            {
               t1 = state_transition_time[j];
-               sprintf(g_errMsg,"a j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
+              devState = 1;//On
+              sprintf(g_errMsg,"a j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
            }
-           if(g_device[i][IX_DEVICE_HEIGHT] == -delta)
+           if(devPow == -trans && devState == 1)
            {
               t2 = state_transition_time[j];
-              itemp = t2 - t1;
-              g_device[i][IX_DEVICE_DURATION] = g_device[i][IX_DEVICE_DURATION] + itemp;
+              devState = 0;//Off
+              devDur = devDur + t2 - t1;
+              t1 = 0;
               n++;
               sprintf(g_errMsg,"b j=%d i=%d t1=%d t2=%d n=%d itemp=%d delta=%d",j,i,t1,t2,n,itemp,delta);
            }
             
         }
-        if(n>0)g_device[i][IX_DEVICE_DURATION] = g_device[i][IX_DEVICE_DURATION]/n;
+        if(n>0)g_device[i][IX_DEVICE_DURATION] = devDur/n;
     }
 }
 
