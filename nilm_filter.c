@@ -74,7 +74,7 @@ main ()
     y[i] = 0;
     for(k=0;k<kmax;k++)
     {
-      if(ydata[i] > maximum[k] - deviation[k] && ydata[i] < > maximum[k] + deviation[k])
+      if(ydata[i] > (maximum[k] - deviation[k]) && ydata[i] < (maximum[k] + deviation[k]))
         y[i] = maximum[k]; // associate system state to y-value
       else
         y[i] = y[i-1]; // if no system state association, set previuos association
