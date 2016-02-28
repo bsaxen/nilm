@@ -215,21 +215,22 @@ int addDevice(float x)
 //===========================================
 {
     int i;
-    for(i=1;i<=n_dev;i++)
+    for(i=0;i<n_dev;i++)
     {
         if(g_device[i][IX_DEVICE_HEIGHT] == x) return(n_dev);
     }
-    n_dev++;
     g_device[n_dev][IX_DEVICE_HEIGHT] = x;
+    n_dev++;
     return(n_dev);
 }
 //===========================================
 void listDevices()
 //===========================================
 {
-    int i,k=0,h,d,p,e;
+    int i,k=0,h,d,p,e,w;
+    float ftemp;
     wclear(data); 
-    for(i=1;i<=n_dev;i++)
+    for(i=0;i<n_dev;i++)
     {
         h = g_device[i][IX_DEVICE_HEIGHT];
         d = g_device[i][IX_DEVICE_DURATION];
@@ -237,11 +238,15 @@ void listDevices()
         if(d > 0 && p > 0)
         {
             k++;
-            e = d*h*3600*24/p;
+            ftemp = 3600./p*24.;
+            e = d*h*ftemp;
+            w = d*h;
             wmove(data,k,2);
-            wprintw(data,"Device %d %d duration=%d period=%d Energy=%d(%d)\n",i,h,d,p,g_totEnergy[i],e);
+            wprintw(data,"%d Pow=%d dur=%d per=%d work=%d Tot=%d(%d)\n",i,h,d,p,w,g_totEnergy[i],e);
         }
     }
+    g_nDevices = n_dev;
+    lib_writeDeviceModel("generated.dm");
 }
 //===========================================
 void getDeviceEnergy()
@@ -250,7 +255,7 @@ void getDeviceEnergy()
     int i,j,itemp,t1,t2,n,prev_t1,period;
     int trans,devPow,devState=0,devDur,fmax1,fmax2; 
 
-    for(i=1;i<=n_dev;i++)
+    for(i=0;i<n_dev;i++)
     {
     	devPow = g_device[i][IX_DEVICE_HEIGHT];
         n = 0;
@@ -298,7 +303,7 @@ void getDeviceEnergy()
         }
         if(n>0)g_device[i][IX_DEVICE_DURATION] = devDur/n;
     }
-    for(i=1;i<=n_dev;i++)
+    for(i=0;i<n_dev;i++)
     {
         fmax1 = 0; fmax2 = 0;
         for(j=0;j<MAX_FREQ;j++)

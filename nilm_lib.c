@@ -240,6 +240,7 @@ void lib_writeDeviceModel(char filename[])
 
   for(i=0;i<g_nDevices;i++)
   {
+    g_device[i][IX_DEVICE_ID] = i+1;
     fprintf(fp,"#==== %d ======\n",i);
     for(j=0;j<N_DEVICE_PAR;j++)
     {
