@@ -2,7 +2,7 @@
 // graphN.c
 // apt-get install ncurses-dev
 // gcc -o graphN graphN.c -lncurses -lm
-// Version: 2016-02-19
+// Version: 2016-03-15
 //======================================
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,15 +133,29 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
     
       wclear(graph); 
 
-      int i,j,k,ix,iy,zeroline,plot[WORLD][WORLD];
-      float dx,dy,tx,ty,ave_y;
-      int old_ix = 0;
+      int i,j,k,m,ix,iy,zeroline,plot[WORLD][WORLD];
+      float dx,dy,tx,ty,ave_y,yv[WORLD];
+      int old_ix = 0,dx2;
+      int x_offset, y_offset;
+    
+      float wwin = right - left;
+      if(left < g_xmin)
+      {
+          left = g_xmin;
+          right = left + wwin;
+      }
+      if(right > g_xmax)
+      {
+          right = g_xmax;
+          left = right - wwin;
+      }
  
       dx = (right - left)/graph_w;
       dy = (top - down)/graph_h;
+      dx2 = graph_w/2;
     
-      float midX = (right + left)/2;
-      float midY = (top + down)/2;
+      float midX = (right + left)/2.;
+      float midY = (top + down)/2.;
     
       int origo = WORLD/2;
 
@@ -152,7 +166,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
            plot[i][j] = 0;
         }
       }
- 
+
       g_wxmin = 999999.; g_wxmax = 0.;
       g_wymin = 999999.; g_wymax = 0.;
     
@@ -172,7 +186,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       
       lib_valToHourMinSec(left);
       wmove(misc,1,2);wprintw(misc,"%2d:%2d:%2d",g_hour,g_minute,g_second); 
-      int mid = (right + left)/2;
+      int mid = (right + left)/2+0.5;
       lib_valToHourMinSec(mid);
       wmove(misc,1,11);wprintw(misc,"<%2d:%2d:%2d>",g_hour,g_minute,g_second);    
       lib_valToHourMinSec(right);
@@ -180,7 +194,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       lib_valToHourMinSec(dx);
       wmove(misc,1,32);wprintw(misc,"(%2d:%2d:%2d)",g_hour,g_minute,g_second);    
 
-      wmove(misc,2,2);wprintw(misc,"[%d]->%d ->%.2f",ndata,mid,g_xvalue[mid]); 
+      
     
       wmove(misc,3,2);wprintw(misc,"X-axis [%.0f,%.0f]=%.2f",left,right,dx);
     
@@ -191,7 +205,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
       plot[ix0][iy0] = 2;
       
     
-      k = 0;
+      k = 0;m = 0;
       for(i=1;i<=ndata;i++)
       {       
         tx = xdata[i]; ty = ydata[i];
@@ -203,14 +217,13 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
               if(old_ix != ix)
               {   
                 ave_y = ave_y/k;
+                yv[m] = ave_y;
+                m++;
                 iy = origo + (ave_y-midY)/dy + 0.5;
                 if(iy > iy0)for(j=iy;j>iy0;j--)plot[ix][j] = 1;
                 if(iy < iy0)for(j=iy;j<iy0;j++)plot[ix][j] = 1;
-                if(i == mid)
-                  plot[ix][iy] = 8; 
-                else
-                  plot[ix][iy] = 5; 
-
+                plot[ix][iy] = 5; 
+               
                 old_ix = ix;
                 k = 0;
                 ave_y = 0.0;
@@ -222,6 +235,7 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
         if(g_wymax < ty)g_wymax = ty;
         if(g_wymin > ty)g_wymin = ty;
       }
+
 
           
       for(i=1;i<graph_w;i++)
@@ -236,12 +250,15 @@ void prep_area(int ndata,float xdata[],float ydata[], float left, float right, f
             if(plot[ix][iy] == 2)wprintw(graph,"o"); // origo
             if(plot[ix][iy] == 3)wprintw(graph,"-"); // x-axis
             if(plot[ix][iy] == 4)wprintw(graph,"|"); // y-axis
-            if(plot[ix][iy] == 5)wprintw(graph,"*"); // top value
+            if(i != dx2 && plot[ix][iy] == 5)wprintw(graph,"*"); // top value
+            if(i == dx2 && plot[ix][iy] == 5)wprintw(graph,"B"); // mid marker
             if(plot[ix][iy] == 6)wprintw(graph,"="); // left corner
             if(plot[ix][iy] == 7)wprintw(graph,"+"); // right corner
-            if(plot[ix][iy] == 8)wprintw(graph,"B"); // mid marker
+            //if(plot[ix][iy] == 8)wprintw(graph,"B"); // mid marker
+            
         }
       }
+     wmove(misc,2,2);wprintw(misc,"[%7d]->%7d ->%.2f m=%5d",ndata,mid,yv[dx2],m); 
 
 }
 //====================================
@@ -263,7 +280,7 @@ void show(WINDOW *win)
   if(win == misc)
   {
      wmove(win,0,2);
-     wprintw(win," 2016-02-19 Status ");
+     wprintw(win," 2016-03-15 Status ");
   }
   if(win == feedback)
   {
@@ -313,7 +330,7 @@ void displayErrMsg()
 void runMode()
 //====================================
 {
-  int ch,x,step,tmp,res=0,a=0,b=0,ir,ok=0,n=0;
+  int ch,x,step,tmp,res=0,a=0,b=0,ir,ok=0,n=0,decInt;
   char tempName[80],syscom[120],stemp[80];
   char command[40][40];
   float xdelta = 0.0,ydelta=0.0;
@@ -339,26 +356,26 @@ void runMode()
       {
         lib_writeErrMsg("h - help");
       }
-      else if (ch=='1')
-      {
-            g_chan = 1;
-            g_nData = lib_readNilmFile(g_mode,g_data_file);
-      }
-      else if (ch=='2')
-      {
-            g_chan = 2;
-            g_nData = lib_readNilmFile(g_mode,g_data_file);
-      }
-      else if (ch=='3')
-      {
-            g_chan = 3;
-            g_nData = lib_readNilmFile(g_mode,g_data_file);
-      }
-      else if (ch=='4')
-      {
-            g_chan = 4;
-            g_nData = lib_readNilmFile(g_mode,g_data_file);
-      }
+//      else if (ch=='1')
+//      {
+//            g_chan = 1;
+//            g_nData = lib_readNilmFile(g_mode,g_data_file);
+//      }
+//      else if (ch=='2')
+//      {
+//            g_chan = 2;
+//            g_nData = lib_readNilmFile(g_mode,g_data_file);
+//      }
+//      else if (ch=='3')
+//      {
+//            g_chan = 3;
+//            g_nData = lib_readNilmFile(g_mode,g_data_file);
+//      }
+//      else if (ch=='4')
+//      {
+//            g_chan = 4;
+//            g_nData = lib_readNilmFile(g_mode,g_data_file);
+//      }
       else if (ch=='g')
       {
           lib_writeErrMsg("g - read nilm data file");
@@ -480,13 +497,73 @@ void runMode()
           lib_writeErrMsg("m - mid Y");
           g_mode++;
           if (g_mode>2)g_mode=1;
-	  }     
+	  } 
+      else if (ch=='0')
+	  {
+          lib_writeErrMsg("0 - move to 0 interval");
+          r_xmin = g_xmin;
+          r_xmax = g_xmin + decInt;
+	  }
+      else if (ch=='1')
+	  {
+          lib_writeErrMsg("1 - move to 1 interval");
+          r_xmin = g_xmin + decInt;
+          r_xmax = g_xmin + 2*decInt;
+	  } 
+    else if (ch=='2')
+	  {
+          lib_writeErrMsg("2 - move to 2 interval");
+          r_xmin = g_xmin + 2*decInt;
+          r_xmax = g_xmin + 3*decInt;
+	  }    
+    else if (ch=='3')
+	  {
+          lib_writeErrMsg("3 - move to 3 interval");
+          r_xmin = g_xmin + 3*decInt;
+          r_xmax = g_xmin + 4*decInt;
+	  }    
+    else if (ch=='4')
+	  {
+          lib_writeErrMsg("4 - move to 4 interval");
+          r_xmin = g_xmin + 4*decInt;
+          r_xmax = g_xmin + 5*decInt;
+	  }    
+    else if (ch=='5')
+	  {
+          lib_writeErrMsg("5 - move to 5 interval");
+          r_xmin = g_xmin + 5*decInt;
+          r_xmax = g_xmin + 6*decInt;
+	  }    
+    else if (ch=='6')
+	  {
+          lib_writeErrMsg("6 - move to 6 interval");
+          r_xmin = g_xmin + 6*decInt;
+          r_xmax = g_xmin + 7*decInt;
+	  }    
+    else if (ch=='7')
+	  {
+          lib_writeErrMsg("7 - move to 7 interval");
+          r_xmin = g_xmin + 7*decInt;
+          r_xmax = g_xmin + 8*decInt;
+	  }    
+    else if (ch=='8')
+	  {
+          lib_writeErrMsg("8- move to 8 interval");
+          r_xmin = g_xmin + 8*decInt;
+          r_xmax = g_xmin + 9*decInt;
+	  }    
+    else if (ch=='9')
+	  {
+          lib_writeErrMsg("9 - move to 9 interval");
+          r_xmin = g_xmin + 9*decInt;
+          r_xmax = g_xmin + 10*decInt;
+	  }    
       else
 	  {
 	    sprintf(stemp,"Unknown command: %c",ch);
         lib_writeErrMsg(stemp);
 	  }
-      
+      decInt = (g_xmax - g_xmin)/10;
       prep_area(g_nData,g_xdata,g_ydata, r_xmin, r_xmax, r_ymin, r_ymax);           
     }
     return;
