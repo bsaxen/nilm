@@ -2,7 +2,7 @@
 // nilm_identify.c
 // apt-get install ncurses-dev
 // gcc -o nilm_identify nilm_identify.c -lncurses -lm
-// 2016-02-22
+// 2017-04-17
 //===========================================
 #include "nilm_lib.c"
 
@@ -486,7 +486,7 @@ void show(WINDOW *win)
   if(win == misc)
   {
      wmove(win,0,2);
-     wprintw(win,"2016-02-21 NILM IDENTIFY");
+     wprintw(win,"2017-04-17 NILM IDENTIFY");
   }
   if(win == feedback)
   {
@@ -497,7 +497,7 @@ void show(WINDOW *win)
 }
 //===========================================
 //===========================================
-main()
+void main()
 //===========================================
 //===========================================
 {
