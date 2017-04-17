@@ -1,6 +1,6 @@
 <?php
 $username="root";
-$password="Milarus!SQL34";
+$password="pswd";
 $database="ioant";
 $field1-name=$_POST['Value1'];
 $field2-name=$_POST['Value2'];
