@@ -6,15 +6,17 @@
 import sys
 #======================================================================
 # Configuration
-n_devices = 5
-
+n_devices = 4
+MAXI = 9000
 #======================================================================
 # Global variables
-top_value = []
-top_index = []
-
 trans = []
 index = []
+sumint = []
+mx = []
+#======================================================================
+def dec_to_bin(x):
+    return str(bin(x)[2:])
 #======================================================================
 def bubbleAsc(listA,listB):
     length = len(listA) - 1
@@ -47,76 +49,88 @@ argc = len(sys.argv)
 if argc == 1:
     print "no input file given"
     exit()
+
+for i in range(0,MAXI):
+    trans.append(1)
+    index.append(1)
+    sumint.append(1)
+    mx.append(1)
+
+for n_devices in range(1,12):
 #======================================================================
 # Init
-for i in range(0,10):
-    top_index.append(1)
-    top_index[i] = 0
-    top_value.append(1)
-    top_value[i] = 0
+    for i in range(0,MAXI):
+        trans[i] = 0
+        index[i] = 0
+        sumint[i] = 0
+        mx[i] = 0
 
-for i in range(0,100):
-    trans.append(1)
-    trans[i] = 0
-    index.append(1)
-    index[i] = 0
+    imax = 0
 
-imax = 0
-
-filename = sys.argv[1]
-print(filename)
-
-file = open(filename, "r")
-value = 0.0
-#======================================================================
-# Read data
-for line in file:
-    #print line
-    line = line.strip('\n')
-    temp = line.split(" ")
-    hour   = temp[0]
-    minute = temp[1]
-    second = temp[2]
-    old = int(value)
-    value  = float(temp[3])
-    ix = abs(int(value) - old)
-    ix = int(ix/100)
+    filename = sys.argv[1]
+    #print(filename)
+        #======================================================================
+    file = open(filename, "r")
+    value = 0.0
+    #======================================================================
+    # Read data
+    for line in file:
+        #  print line
+        line = line.strip('\n')
+        temp = line.split(" ")
+        old = int(value)
+        value  = float(temp[3])
+        ix = abs(int(value) - old)
+        ix = int(ix/100)
     #print ix
-    trans[ix] += 1
-    index[ix] = ix
+        trans[ix] += 1
+        index[ix] = ix
     #updateTopList(imax)
     #print top_index
     #print top_value
-    if imax < ix:
-        imax = ix
-file.close()
-
-file = open("trans.work", "w")
-for i in range(0,imax):
+        if imax < ix:
+            imax = ix
+    file.close()
+#======================================================================
+    file = open("trans.work", "w")
+    for i in range(0,imax):
     #if trans[i] != 0:
-    file.write("%d %d\n" % (i,trans[i]))
+        file.write("%d %d\n" % (i,trans[i]))
         #print "."*freq[i]
         #print i
-file.close()
+    file.close()
 
+#======================================================================
+    bubbleDesc(trans,index)
 
-bubbleDesc(trans,index)
+    for k in range(n_devices):
+        print ("%d %d" % (k,index[k]))
+    print "================"
+    for i in range(2**n_devices):
+        bb = dec_to_bin(i)
+        sumint[i] = 0
+        for j in range(len(bb)):
+            if bb[j] == '1':
+                sumint[i] = sumint[i] + int(index[len(bb)-j-1])
+        mx[sumint[i]] = 1
 
-def dec_to_bin(x):
-    return str(bin(x)[2:])
+#======================================================================
+    file = open("freq.work", "r")
+#======================================================================
+# Read data
+    tot = 0
+    i = 0
+    hit = 0
+    for line in file:
+        #print line
+        line = line.strip('\n')
+        temp = line.split(" ")
+        power = int(temp[0])
+        freq  = int(temp[1])
+        hit = hit + mx[power]*freq
+        tot = tot + freq
+    file.close()
 
-for i in range(5):
-    print ("%d %d" % (i,index[i]))
-print "================"
-for i in range(32):
-    bb = dec_to_bin(i)
-    #print bb
-    sum = 0
-    for j in range(len(bb)):
-        #print j
-        if bb[j] == '1':
-            #print ("sum %d %s" % (j,"ds"))
-            sum = sum + int(index[len(bb)-j-1])
-    print ("%d %d %s" % (i,sum,bb))
-#print trans
-#print index
+    #print ("%d tot=%d hit=%d" % (n_devices,tot,hit))
+    ftemp =  float(hit)/float(tot)
+    print ("%d %f" % (n_devices,ftemp))
