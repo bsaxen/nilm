@@ -106,7 +106,7 @@ int main(int argc, char **argv)
       if(g_xMin > t)g_xMin = t;
       lib_valToHourMinSec(t);
       fprintf(fp,"%d:%d:%d %.2f \n",g_hour,g_minute,g_second,(float)sum);
-      fprintf(fpc,"\"%d:%d:%d\", \"%.2f\" \n",g_hour,g_minute,g_second,(float)sum);
+      fprintf(fpc,\"%.2f\"\n",(float)sum);
    }
    fclose(fp);
    fclose(fpc);
