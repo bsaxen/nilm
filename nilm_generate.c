@@ -1,7 +1,7 @@
 //===========================================
 // nilm_generate.c
 // gcc -o nilm_generate nilm_generate.c -lm
-// 2016-02-19
+// 2018-06-11
 //===========================================
 
 #include "nilm_lib.c"
@@ -60,6 +60,11 @@ int main(int argc, char **argv)
       lib_nilmError("Unable to open-write generated Nilm Data file",0);
       exit(0);
     }
+    if ((fp_csv = fopen("generatedData.csv", "w")) == NULL)
+    { 
+      lib_nilmError("Unable to open-write generated CSV Data file",0);
+      exit(0);
+    }
     
     n = 0;
     for(i=left;i<=right;i++)
@@ -101,6 +106,8 @@ int main(int argc, char **argv)
       if(g_xMin > t)g_xMin = t;
       lib_valToHourMinSec(t);
       fprintf(fp,"%d:%d:%d %.2f \n",g_hour,g_minute,g_second,(float)sum);
+      fprintf(fp_csv,"\"%d:%d:%d\", %.2f \n",g_hour,g_minute,g_second,(float)sum);
    }
    fclose(fp);
+   fclose(fp_csv);
 }
