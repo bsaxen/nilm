@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 {
     char devModFile[120];
     int i,j,t,v,left,right,s,d,p,h,low;
-    FILE* fp;
+    FILE* fp,fp_csv;
     
     lib_nilmInit();
     
