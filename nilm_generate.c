@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 {
     char devModFile[120];
     int i,j,t,v,left,right,s,d,p,h,low;
-    FILE* fp,fp_csv;
+    FILE *fp,*fpc;
     
     lib_nilmInit();
     
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
       lib_nilmError("Unable to open-write generated Nilm Data file",0);
       exit(0);
     }
-    if ((fp_csv = fopen("generatedData.csv", "w")) == NULL)
+    if ((fpc = fopen("generatedData.csv", "w")) == NULL)
     { 
       lib_nilmError("Unable to open-write generated CSV Data file",0);
       exit(0);
@@ -106,8 +106,8 @@ int main(int argc, char **argv)
       if(g_xMin > t)g_xMin = t;
       lib_valToHourMinSec(t);
       fprintf(fp,"%d:%d:%d %.2f \n",g_hour,g_minute,g_second,(float)sum);
-      fprintf(fp_csv,"\"%d:%d:%d\", %.2f \n",g_hour,g_minute,g_second,(float)sum);
+      fprintf(fpc,"\"%d:%d:%d\", %.2f \n",g_hour,g_minute,g_second,(float)sum);
    }
    fclose(fp);
-   fclose(fp_csv);
+   fclose(fpc);
 }
